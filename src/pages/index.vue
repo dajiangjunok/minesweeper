@@ -1,49 +1,39 @@
 <script setup lang="ts">
-const name = $ref('')
+interface BlockState {
+  x: number
+  y: number
+  // 是否被翻开
+  revealed?: boolean
+  // 是否是炸弹
+  mine?: boolean
+  // 是否被标记
+  flagged?: boolean
+  // 是否临近
+  adjacentMines?: boolean
+}
 
-const router = useRouter()
-const go = () => {
-  if (name)
-    router.push(`/hi/${encodeURIComponent(name)}`)
+const WIDTH = 10
+const HEIGHT = 10
+const state = reactive(
+  Array.from({ length: WIDTH },
+    (_, y) => Array.from({ length: HEIGHT },
+      (_, x): BlockState => ({
+        x, y,
+      })),
+  ),
+)
+
+function onClick(x: number, y: number) {
+  console.log(x, y)
 }
 </script>
 
 <template>
   <div>
-    <div i-carbon-campsite text-4xl inline-block />
-    <p>
-      <a rel="noreferrer" href="https://github.com/antfu/vitesse-lite" target="_blank">
-        Vitesse Lite
-      </a>
-    </p>
-    <p>
-      <em text-sm op75>Opinionated Vite Starter Template</em>
-    </p>
-
-    <div py-4 />
-
-    <input
-      id="input"
-      v-model="name"
-      placeholder="What's your name?"
-      type="text"
-      autocomplete="false"
-      p="x-4 y-2"
-      w="250px"
-      text="center"
-      bg="transparent"
-      border="~ rounded gray-200 dark:gray-700"
-      outline="none active:none"
-      @keydown.enter="go"
-    >
-
-    <div>
-      <button
-        class="m-3 text-sm btn"
-        :disabled="!name"
-        @click="go"
-      >
-        Go
+    Minesweeper
+    <div v-for="(row, index) in state" :key="index">
+      <button v-for="(item, indey) in row" :key="indey" w-10 h-10 border hover:bg-gray @click=" onClick(item.x, item.y)">
+        {{ item.y * 10 + (item.x + 1) }}
       </button>
     </div>
   </div>
