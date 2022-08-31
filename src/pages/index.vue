@@ -14,7 +14,7 @@ interface BlockState {
 
 const WIDTH = 10
 const HEIGHT = 10
-const state = reactive(
+const state = ref(
   Array.from({ length: WIDTH },
     (_, y) => Array.from({ length: HEIGHT },
       (_, x): BlockState => ({
@@ -24,7 +24,7 @@ const state = reactive(
 )
 
 function generateMines(initial: BlockState) {
-  for (const row of state) {
+  for (const row of state.value) {
     for (const block of row) {
       // 保证上下两格不存在炸弹
       if (Math.abs(initial.x - block.x) <= 1)
@@ -41,7 +41,7 @@ function expendZero(block: BlockState) {
   if (block.adjacentMines)
     return
   getSiblings(block).forEach((s) => {
-    if (!s.revealed) {
+    if (!s.revealed && !s.flagged) {
       s.revealed = true
       expendZero(s)
     }
@@ -73,7 +73,7 @@ const numberColors = [
 ]
 
 function updateNumbers() {
-  state.forEach((row, y) => {
+  state.value.forEach((row, y) => {
     row.forEach((block, x) => {
       if (block.mine)
         return
@@ -93,7 +93,7 @@ function getSiblings(block: BlockState) {
     if (x2 < 0 || x2 >= WIDTH || y2 < 0 || y2 >= HEIGHT)
       return undefined
 
-    return state[y2][x2]
+    return state.value[y2][x2]
   })
     .filter(Boolean) as BlockState[]
 }
@@ -102,6 +102,9 @@ function getSiblings(block: BlockState) {
 let mineGenerated = false
 const dev = false
 function onClick(block: BlockState) {
+  if (block.flagged)
+    return
+
   if (!mineGenerated) {
     generateMines(block)
     updateNumbers()
@@ -115,11 +118,39 @@ function onClick(block: BlockState) {
   expendZero(block)
 }
 
-function getBlockClass(item: BlockState) {
-  if (!item.revealed)
-    return 'bg-gray-500/10'
+function onRightClick(block: BlockState) {
+  if (block.revealed)
+    return
+  block.flagged = !block.flagged
+}
 
-  return item.mine ? 'text-red' : numberColors[item.adjacentMines]
+watch(state, checkGameState, {
+  deep: true,
+},
+)
+
+function checkGameState() {
+  const blocks = state.value.flat()
+
+  // const isCheck = blocks.every(block =>
+  //   (!block.mine && block.revealed) || block.flagged,
+  // )
+
+  // 只要有不是炸弹的没有翻开,那就不用进去判断
+  const isPass = blocks.some(block => !block.revealed && !block.mine)
+
+  if (!isPass)
+    alert('You win!')
+}
+
+function getBlockClass(block: BlockState) {
+  if (block.flagged)
+    return 'bg-gray-500/10 '
+
+  if (!block.revealed)
+    return 'bg-gray-500/10 hover:bg-gray-500/40'
+
+  return block.mine ? 'text-red' : numberColors[block.adjacentMines]
 }
 </script>
 
@@ -136,11 +167,14 @@ function getBlockClass(item: BlockState) {
           items-center
           w-10 h-10
           border="1 color-gray-500/50"
-          hover:bg-gray
           :class="getBlockClass(block)"
           @click=" onClick(block)"
+          @contextmenu.prevent="onRightClick(block)"
         >
-          <tempalte v-if="block.revealed || dev">
+          <tempalte v-if="block.flagged">
+            <div i-mdi:flag />
+          </tempalte>
+          <tempalte v-else-if="block.revealed || dev">
             <div v-if="block.mine" i-mdi:mine />
             <div v-else>
               {{ block.adjacentMines }}
