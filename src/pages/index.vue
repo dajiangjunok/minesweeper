@@ -3,7 +3,7 @@ import MineBlock from '../components/MineBlock.vue'
 import type { BlockState } from '~/types'
 import { GamePaly, isDev, toggleDev } from '~/composables'
 
-const play = new GamePaly(12, 12)
+const play = new GamePaly(10, 10)
 const state = play.state
 </script>
 

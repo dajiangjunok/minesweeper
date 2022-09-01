@@ -12,8 +12,8 @@ const directions = [
 
 export class GamePaly {
   mineGenerated = false
-  isLose = false
   state = ref<BlockState[][]>([])
+  gameState = ref<'play' | 'won' | 'lost'>('play')
 
   constructor(public width: number, public height: number) {
     // watch(this.state, this.checkGameState, {
@@ -25,8 +25,9 @@ export class GamePaly {
 
   reset() {
     this.mineGenerated = false
-    this.state.value = Array.from({ length: this.height },
-      (_, y) => Array.from({ length: this.width },
+    this.gameState.value = 'play'
+    this.state.value = Array.from({ length: this.width },
+      (_, y) => Array.from({ length: this.height },
         (_, x): BlockState => ({
           x, y, revealed: false, flagged: false, mine: false, adjacentMines: 0,
         })),
@@ -85,11 +86,9 @@ export class GamePaly {
       .filter(Boolean) as BlockState[]
   }
 
-  revealedAll() {
-    const blocks = this.state.value.flat()
-
-    blocks.forEach((block) => {
-      if (!block.revealed)
+  showAllMines() {
+    this.state.value.flat().forEach((block) => {
+      if (block.mine)
         block.revealed = true
     })
   }
@@ -97,26 +96,29 @@ export class GamePaly {
   // 事件函数
 
   onClick(block: BlockState) {
+    if (this.gameState.value !== 'play')
+      return
     if (block.flagged)
       return
 
     if (!this.mineGenerated) {
       this.generateMines(this.state.value, block)
-      this.updateNumbers()
       this.mineGenerated = true
     }
     block.revealed = true
 
     if (block.mine) {
-      this.isLose = true
-      this.revealedAll()
-      alert('Boooooom!!!')
+      this.gameState.value = 'lost'
+      this.showAllMines()
+      return
     }
 
     this.expendZero(block)
   }
 
   onRightClick(block: BlockState) {
+    if (this.gameState.value !== 'play')
+      return
     if (block.revealed)
       return
     block.flagged = !block.flagged
@@ -132,7 +134,7 @@ export class GamePaly {
     // 只要有不是炸弹的没有翻开,那就不用进去判断
     const isPass = blocks.some(block => !block.revealed && !block.mine)
 
-    if (!isPass && !this.isLose)
-      alert('You win!')
+    if (!isPass)
+      this.gameState.value = 'won'
   }
 }
