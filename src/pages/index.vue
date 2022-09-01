@@ -1,16 +1,5 @@
 <script setup lang="ts">
-interface BlockState {
-  x: number
-  y: number
-  // 是否被翻开
-  revealed?: boolean
-  // 是否是炸弹
-  mine?: boolean
-  // 是否被标记
-  flagged?: boolean
-  // 是否临近
-  adjacentMines: number
-}
+import type { BlockState } from '~/types'
 
 const WIDTH = 10
 const HEIGHT = 10
@@ -32,7 +21,7 @@ function generateMines(initial: BlockState) {
       if (Math.abs(initial.y - block.y) <= 1)
         continue
 
-      block.mine = Math.random() < 0.2
+      block.mine = Math.random() < 0.1
     }
   }
 }
@@ -100,6 +89,7 @@ function getSiblings(block: BlockState) {
 
 // 事件函数
 let mineGenerated = false
+let isLose = false
 const dev = false
 function onClick(block: BlockState) {
   if (block.flagged)
@@ -112,8 +102,11 @@ function onClick(block: BlockState) {
   }
   block.revealed = true
 
-  if (block.mine)
+  if (block.mine) {
+    isLose = true
+    revealedAll()
     alert('Boooooom!!!')
+  }
 
   expendZero(block)
 }
@@ -139,8 +132,17 @@ function checkGameState() {
   // 只要有不是炸弹的没有翻开,那就不用进去判断
   const isPass = blocks.some(block => !block.revealed && !block.mine)
 
-  if (!isPass)
+  if (!isPass && !isLose)
     alert('You win!')
+}
+
+function revealedAll() {
+  const blocks = state.value.flat()
+
+  blocks.forEach((block) => {
+    if (!block.revealed)
+      block.revealed = true
+  })
 }
 
 function getBlockClass(block: BlockState) {
@@ -172,7 +174,7 @@ function getBlockClass(block: BlockState) {
           @contextmenu.prevent="onRightClick(block)"
         >
           <tempalte v-if="block.flagged">
-            <div i-mdi:flag />
+            <div i-mdi:flag text-red />
           </tempalte>
           <tempalte v-else-if="block.revealed || dev">
             <div v-if="block.mine" i-mdi:mine />
