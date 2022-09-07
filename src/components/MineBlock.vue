@@ -44,7 +44,7 @@ function getBlockClass(block: BlockState) {
     :class="getBlockClass(block)"
   >
     <div v-if="block.flagged">
-      <div i-mdi:flag text-red />
+      <div text-red i-mdi:flag />
     </div>
     <div v-else-if="block.revealed || isDev">
       <div v-if="block.mine" i-mdi:mine />
